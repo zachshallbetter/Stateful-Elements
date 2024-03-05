@@ -1,6 +1,6 @@
 # Stateful DOM Elements Library
 
-The Stateful DOM Elements Library is an advanced JavaScript library designed to significantly enhance the Document Object Model (DOM) by seamlessly integrating state management capabilities directly into DOM elements. By doing so, it offers developers an exceptionally convenient and efficient method for managing the state of DOM elements, thereby substantially improving code organization, readability, and maintainability. This library stands as a pivotal tool for developers seeking to streamline their web development processes and ensure a more structured and intuitive handling of dynamic content and user interactions.
+The Stateful (DOM) Elements Library is an advanced JavaScript library designed to significantly enhance the Document Object Model (DOM) by seamlessly integrating state management capabilities directly into DOM elements. By doing so, it offers developers an exceptionally convenient and efficient method for managing the state of DOM elements, thereby substantially improving code organization, readability, and maintainability. This library stands as a pivotal tool for developers seeking to streamline their web development processes and ensure a more structured and intuitive handling of dynamic content and user interactions.
 
 ## Installation
 
@@ -226,3 +226,9 @@ Contributions to the Stateful DOM Elements Library are welcome! Please refer to 
 ## License
 
 This library is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute it as per the terms of the license.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS ORIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THEAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHERLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THESOFTWARE.EOT
