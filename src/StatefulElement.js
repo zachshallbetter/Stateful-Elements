@@ -8,58 +8,68 @@ class StatefulElement extends HTMLElement {
         this.#initializeEventListeners();
     }
 
-    async #initializeEventListeners() {
-        this.addEventListener('statechange', this.#handleStateChange.bind(this));
-
-        this.addEventListener('click', async event => {
-            const target = event.target.closest('[data-action]');
-            if (target) {
-                const action = target.dataset.action;
-                this.dispatchEvent(new CustomEvent(action, { detail: { target }, bubbles: true, composed: true }));
+    #initializeEventListeners() {
+        this.addEventListener('click', event => {
+            let target = event.target;
+            while (target && target !== this) {
+                if (target.matches('[data-action]')) {
+                    const action = target.dataset.action;
+                    this.dispatchEvent(new CustomEvent(action, { detail: { target }, bubbles: true, composed: true }));
+                    break;
+                }
+                target = target.parentNode;
             }
         });
     }
 
-    async #handleStateChange(event) {
-        console.log('State changed:', event.detail);
+    #dispatchStateChange(eventName = 'statechange', detail = {}) {
+        const eventDetail = { ...detail, currentStates: this.#state };
+        const eventOptions = { detail: eventDetail, bubbles: true, composed: true };
+        this.dispatchEvent(new CustomEvent(eventName, eventOptions));
     }
 
-    async #dispatchStateChange(eventName = 'statechange', detail = {}) {
-        this.dispatchEvent(new CustomEvent(eventName, { detail: { ...detail, currentStates: this.#state }, bubbles: true, composed: true }));
+    setState(newState) {
+        this.#state = { ...this.#state, ...newState };
+        this.#dispatchStateChange();
     }
 
-    async setState(newState) {
-        Object.assign(this.#state, newState);
-        await this.#dispatchStateChange();
-    }
-
-    async getState() {
+    getState() {
         return { ...this.#state };
     }
 
-    async mergeState(partialState) {
-        await this.setState({ ...partialState });
+    mergeState(partialState) {
+        Object.assign(this.#state, partialState);
+        this.#dispatchStateChange();
     }
 
-    async groupState(groupName, stateIds) {
-        if (!Array.isArray(stateIds) || stateIds.length === 0) {
+    groupState(groupName, stateIds) {
+        if (!Array.isArray(stateIds) || !stateIds.length) {
             console.error('State IDs must be an array with at least one element.');
             return;
         }
 
-        const groupedState = stateIds.reduce((acc, id) => {
-            if (id in this.#state) {
-                acc[id] = this.#state[id];
+        const groupedState = stateIds.reduce((accumulator, id) => {
+            if (this.#state.hasOwnProperty(id)) {
+                accumulator[id] = this.#state[id];
             } else {
                 console.warn(`State ID '${id}' not found.`);
             }
-            return acc;
+            return accumulator;
         }, {});
 
-        await this.setState({ [groupName]: { ...groupedState, listeners: [] } });
-        await this.#dispatchStateChange('groupStateUpdated', { groupName, groupedState });
+        this.#state[groupName] = { ...this.#state[groupName], ...groupedState, listeners: this.#state[groupName]?.listeners || [] };
+        this.#dispatchStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName] });
     }
-    async manageListeners(groupName, callback, action) {
+
+    updateGroupState(groupName, partialState) {
+        if (groupName in this.#state && typeof this.#state[groupName] === 'object') {
+            Object.assign(this.#state[groupName], partialState);
+            this.manageListeners(groupName, null, 'notify');
+            this.#dispatchStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName] });
+        }
+    }
+
+    manageListeners(groupName, callback, action) {
         const listeners = this.#listeners.get(groupName) || [];
         if (action === 'add') {
             if (groupName in this.#state && typeof callback === 'function') {
@@ -71,63 +81,32 @@ class StatefulElement extends HTMLElement {
         } else if (action === 'notify') {
             if (listeners.length) {
                 const groupState = this.#state[groupName];
-                listeners.forEach(async callback => await callback(groupState));
+                listeners.forEach(callback => callback(groupState));
             }
         }
     }
 
-    async updateGroupState(groupName, partialState) {
-        if (groupName in this.#state) {
-            Object.assign(this.#state[groupName], partialState);
-            await this.manageListeners(groupName, null, 'notify');
-            await this.#dispatchStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName] });
-        }
-    }
-
-    async watchState(callback) {
+    watchState(callback) {
         this.addEventListener('statechange', callback);
-    async updateGroupStateAsync(groupName, partialState) {
-            if (groupName in this.#state) {
-                await this.setStateAsync({ [groupName]: { ...this.#state[groupName], ...partialState } });
-                this.manageListeners(groupName, null, 'notify');
-                this.#dispatchStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName] });
-            }
-        }
+    }
 
-        watchState(callback) {
-            this.addEventListener('statechange', callback);
-        }
+    addState(stateName, value = true) {
+        this.setState({ [stateName]: value });
+        this.#dispatchStateChange('stateAdded', { stateName, value });
+    }
 
-        addState(stateName, value = true) {
-            this.setState({ [stateName]: value });
-            this.#dispatchStateChange('stateAdded', { stateName, value });
-        }
-
-    async addStateAsync(stateName, value = true) {
-            await this.setStateAsync({ [stateName]: value });
-            this.#dispatchStateChange('stateAdded', { stateName, value });
-        }
-
-        removeState(stateName) {
-            if (stateName in this.#state) {
-                const { [stateName]: _, ...rest } = this.#state;
-                this.#state = rest;
-                this.#dispatchStateChange('stateRemoved', { stateName });
-            }
-        }
-
-    async removeStateAsync(stateName) {
-            if (stateName in this.#state) {
-                const { [stateName]: _, ...rest } = this.#state;
-                this.#state = rest;
-                await this.#dispatchStateChange('stateRemoved', { stateName });
-            }
-        }
-
-        hasState(stateName) {
-            return stateName in this.#state;
+    removeState(stateName) {
+        if (stateName in this.#state) {
+            const { [stateName]: _, ...rest } = this.#state;
+            this.#state = rest;
+            this.#dispatchStateChange('stateRemoved', { stateName });
         }
     }
+
+    hasState(stateName) {
+        return stateName in this.#state;
+    }
+}
 
 customElements.define('stateful-element', StatefulElement);
 
