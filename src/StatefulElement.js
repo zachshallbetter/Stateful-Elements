@@ -1,28 +1,127 @@
-// src/StatefulElement.js
-export default class StatefulElement extends HTMLElement {
-    #state = {};
-    #eventManager;
-    #listeners = new Map(); // Declaration added to fix linting errors
+export class EventManager {
+    #listeners = new Map();
+    #stateListeners = new Map();
 
-    constructor() {
-        super();
-        this.#eventManager = new EventManager();
+    constructor() { }
+
+    addEventListener(eventType, callback) {
+        if (!this.#listeners.has(eventType)) {
+            this.#listeners.set(eventType, []);
+        }
+        this.#listeners.get(eventType).push(callback);
+    }
+
+    dispatchEvent(eventType, detail) {
+        if (this.#listeners.has(eventType)) {
+            this.#listeners.get(eventType).forEach(callback => callback(detail));
+        }
+    }
+
+    manageStateListeners(groupName, callback, action = 'add') {
+        let listeners = this.#stateListeners.get(groupName) || [];
+        if (action === 'add') {
+            if (typeof callback === 'function') {
+                listeners = [...listeners, callback];
+                this.#stateListeners.set(groupName, listeners);
+            } else {
+                console.error(`Callback is not a function.`);
+            }
+        } else if (action === 'remove') {
+            listeners = listeners.filter(listener => listener !== callback);
+            this.#stateListeners.set(groupName, listeners);
+        }
+    }
+
+    notifyStateChange(groupName, state) {
+        const listeners = this.#stateListeners.get(groupName) || [];
+        listeners.forEach(callback => callback(state));
+    }
+}
+
+export class ElementManager {
+    #statefulElements = new Map();
+    #eventManager;
+
+    constructor(eventManager = new EventManager()) {
+        this.#eventManager = eventManager;
         this.#initialize();
     }
 
-    #initialize() {
+    #initialize = () => {
+        this.#eventManager.addEventListener('statechange', this.#handleStateChange);
+    }
+
+    #handleStateChange = ({ detail: { state } }) => {
+        this.#updateStatefulElements(state);
+    }
+
+    #updateStatefulElements = (state) => {
+        Object.entries(state).forEach(([key, value]) => {
+            if (!this.#statefulElements.has(key)) {
+                // Create a new object for each key to ensure unique state
+                this.#statefulElements.set(key, { value });
+            } else {
+                // Directly update the value if the element already exists
+                const element = this.#statefulElements.get(key);
+                element.value = value;
+            }
+        });
+        console.debug('Stateful elements updated:', this.#statefulElements);
+    }
+
+    #updateState = (stateName, stateValue) => {
+        const detail = { stateName, stateValue };
+        this.#eventManager.dispatchEvent('updateState', detail);
+        console.debug(`Update state event triggered with name: ${stateName} and value: ${stateValue}`);
+    }
+
+    #chainElementInteraction = (key) => new Promise((resolve, reject) => {
+        this.#statefulElements.has(key) ? resolve(key) : reject(`No stateful element found for key: ${key}`);
+    });
+
+    handleElementInteraction = (event) => {
+        const key = event.currentTarget.dataset.key;
+        this.#chainElementInteraction(key)
+            .then(key => this.#updateState(key, this.#statefulElements.get(key).value))
+            .catch(error => console.error(`Error handling interaction: ${error}`));
+    }
+
+    addStatefulElement = (key, element) => {
+        this.#statefulElements.set(key, element);
+        console.debug(`Stateful element added: ${key}`);
+    }
+
+    removeStatefulElement = (key) => {
+        if (this.#statefulElements.delete(key)) {
+            console.debug(`Stateful element removed: ${key}`);
+        }
+    }
+
+    updateUI = (state) => {
+        this.#updateStatefulElements(state);
+    }
+}
+
+export class StatefulElement extends HTMLElement {
+    #state = {};
+    #eventManager = new EventManager();
+    #elementManager;
+
+    constructor() {
+        super();
+        this.#initialize();
+    }
+
+    #initialize = () => {
+        this.#elementManager = new ElementManager(this.#eventManager);
         this.#setupEventListeners();
     }
 
-    #setupEventListeners() {
-        this.#setupEventListener('click', this.#handleActionClicks.bind(this));
+    #setupEventListeners = () => {
+        this.#eventManager.addEventListener('click', event => this.#handleActionClicks(event));
     }
 
-    #setupEventListener(eventType, handler) {
-        this.addEventListener(eventType, handler);
-    }
-
-    #handleActionClicks(event) {
+    #handleActionClicks = (event) => {
         let { target } = event;
         while (target && target !== this) {
             if (target.matches('[data-action]')) {
@@ -33,24 +132,23 @@ export default class StatefulElement extends HTMLElement {
         }
     }
 
-    #triggerActionEvent(action, detail) {
+    #triggerActionEvent = (action, detail) => {
         this.#eventManager.dispatchEvent(action, detail);
     }
 
-    #notifyStateChange(eventName = 'statechange', detail = {}) {
-        this.dispatchEvent(new CustomEvent(eventName, { detail: { ...detail, state: this.#state }, bubbles: true, composed: true }));
+    #notifyStateChange = (eventName = 'statechange', detail = {}) => {
+        this.#eventManager.dispatchEvent(eventName, { detail: { ...detail, state: this.#state }, bubbles: true, composed: true });
     }
 
-    setState(newState) {
+    setState = (newState) => {
         Object.assign(this.#state, newState);
         this.#notifyStateChange();
+        this.#elementManager.updateUI(this.#state);
     }
 
-    getState() {
-        return { ...this.#state };
-    }
+    getState = () => ({ ...this.#state });
 
-    mergeState(partialState) {
+    mergeState = (partialState) => {
         const prevState = { ...this.#state };
         Object.entries(partialState).forEach(([key, value]) => {
             if (prevState[key] !== value) {
@@ -70,9 +168,9 @@ export default class StatefulElement extends HTMLElement {
         }
     }
 
-    groupState(groupName, stateIds = []) {
-        if (!stateIds.length) {
-            console.error('State IDs must be a non-empty array.');
+    groupState = (groupName, stateIds = []) => {
+        if (!Array.isArray(stateIds) || !stateIds.length) {
+            console.error('stateIds must be a non-empty array.');
             return;
         }
 
@@ -85,85 +183,73 @@ export default class StatefulElement extends HTMLElement {
             return accumulator;
         }, {});
 
-        // Merge new grouped state with existing group data, excluding listeners to avoid overwriting them
-        const existingGroupData = { ...this.#state[groupName] };
-        delete existingGroupData.listeners; // Remove listeners from the existing group data to prevent overwriting
+        let existingGroupData = this.#state[groupName];
+        // Ensure existingGroupData is an object before attempting to merge
+        if (typeof existingGroupData !== 'object' || existingGroupData === null) {
+            console.warn(`Existing group data for '${groupName}' is not an object. Initializing as an empty object.`);
+            existingGroupData = {};
+        }
         const mergedGroupState = { ...existingGroupData, ...newGroupedState };
 
-        // Preserve and append to the existing listeners array
-        const existingListeners = this.#state[groupName]?.listeners || [];
-        this.#state[groupName] = { ...mergedGroupState, listeners: existingListeners };
+        this.#state[groupName] = mergedGroupState;
 
-        // Calculate the updated keys and values for detailed notification
-        const updatedKeys = Object.keys(newGroupedState);
+        // Notify about the entire mergedGroupState changes instead of just newGroupedState
+        const updatedKeys = Object.keys(mergedGroupState);
         const updatedValues = updatedKeys.reduce((acc, key) => {
-            acc[key] = newGroupedState[key];
+            acc[key] = mergedGroupState[key];
             return acc;
         }, {});
 
+        this.#notifyStateChange('stateUpdated', { updatedKeys, updatedValues });
+    }
+
+    updateGroupState = (groupName, partialState) => {
+        const groupState = this.#state[groupName];
+        if (!(groupName in this.#state) || typeof groupState !== 'object' || Array.isArray(groupState)) {
+            console.warn(`Group name '${groupName}' does not exist, is not an object, or is an array.`);
+            return;
+        }
+
+        // Merge the partialState into the existing group state
+        this.#state[groupName] = { ...groupState, ...partialState };
+
+        const updatedKeys = Object.keys(partialState);
+        const updatedValues = updatedKeys.reduce((acc, key) => {
+            acc[key] = partialState[key];
+            return acc;
+        }, {});
         this.#notifyStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName], updatedKeys, updatedValues });
     }
-
-    updateGroupState(groupName, partialState) {
-        if (groupName in this.#state && typeof this.#state[groupName] === 'object') {
-            Object.assign(this.#state[groupName], partialState);
-            this.#notifyListeners(groupName);
-
-            // Calculate the updated keys and values for detailed notification
-            const updatedKeys = Object.keys(partialState);
-            const updatedValues = updatedKeys.reduce((acc, key) => {
-                acc[key] = partialState[key];
-                return acc;
-            }, {});
-
-            this.#notifyStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName], updatedKeys, updatedValues });
-        }
-    }
-
-    #notifyListeners(groupName) {
-        const listeners = this.#listeners.get(groupName) || [];
-        listeners.forEach(callback => callback(this.#state[groupName]));
-    }
-
-    manageListeners(groupName, callback, action = 'add') {
-        let listeners = this.#listeners.get(groupName) || [];
+    manageListeners = (groupName, callback, action = 'add') => {
         if (action === 'add') {
-            if (groupName in this.#state && typeof callback === 'function') {
-                listeners = [...listeners, callback];
-                this.#listeners.set(groupName, listeners);
-            } else {
-                console.error(`Group '${groupName}' not found or callback is not a function.`);
-            }
+            this.#eventManager.addEventListener(groupName, callback);
         } else if (action === 'remove') {
-            listeners = listeners.filter(listener => listener !== callback);
-            this.#listeners.set(groupName, listeners);
+            this.#eventManager.removeEventListener(groupName, callback);
         }
     }
 
-    watchState(callback) {
+    watchState = (callback) => {
         this.#eventManager.addEventListener('statechange', callback);
     }
 
-    addState(stateName, value = true) {
+    addState = (stateName, value = true) => {
         this.#state = { ...this.#state, [stateName]: value };
         this.#notifyStateChange('stateAdded', { stateName, value });
     }
 
-    removeState(stateName) {
-        if (stateName in this.#state) {
-            const newState = Object.assign({}, this.#state);
-            delete newState[stateName];
-            this.#state = newState;
-            this.#notifyStateChange('stateRemoved', { stateName });
-        }
+    removeState = (stateName) => {
+        if (!(stateName in this.#state)) return;
+
+        const newState = { ...this.#state };
+        delete newState[stateName];
+        this.#state = newState;
+        this.#notifyStateChange('stateRemoved', { stateName });
     }
 
-    hasState(stateName) {
-        return stateName in this.#state;
-    }
+    hasState = (stateName) => stateName in this.#state;
 
-    resetState() {
-        this.#state = {}; // Reset the state to an empty object
-        this.#notifyStateChange('stateReset'); // Notify listeners of the state reset
+    resetState = () => {
+        this.#state = {};
+        this.#notifyStateChange('stateReset');
     }
 }
