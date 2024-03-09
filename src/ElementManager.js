@@ -1,5 +1,6 @@
 // ElementManager.js
 import EventManager from './EventManager.js';
+import { asyncGenerator, runContinuation } from './utils/DelimitedContinuationsUtils.js';
 
 export default class ElementManager {
     #statefulElements = new Map();
@@ -10,52 +11,59 @@ export default class ElementManager {
         this.#initialize();
     }
 
-    #initialize = () => {
-        this.#eventManager.addEventListener('statechange', this.#handleStateChange);
-    }
+    #initialize = asyncGenerator(function* () {
+        yield runContinuation(this.#eventManager.addEventListener('statechange', this.#handleStateChange));
+    }.bind(this));
 
-    #handleStateChange = ({ detail: { state } }) => {
-        this.#updateStatefulElements(state);
-    }
+    #handleStateChange = asyncGenerator(function* ({ detail: { state } }) {
+        yield runContinuation(this.#updateStatefulElements(state));
+    }.bind(this));
 
-    #updateStatefulElements = (state) => {
+    #updateStatefulElements = asyncGenerator(function* (state) {
         Object.entries(state).forEach(([key, value]) => {
             const element = this.#statefulElements.get(key) || { value };
             element.value = value;
             this.#statefulElements.set(key, element);
         });
         console.debug('Stateful elements updated:', this.#statefulElements);
-    }
+    }.bind(this));
 
-    #updateState = (stateName, stateValue) => {
+    #updateState = asyncGenerator(function* (stateName, stateValue) {
         const detail = { stateName, stateValue };
-        this.#eventManager.dispatchEvent('updateState', detail);
+        yield runContinuation(this.#eventManager.dispatchEvent('updateState', detail));
         console.debug(`Update state event triggered with name: ${stateName} and value: ${stateValue}`);
-    }
+    }.bind(this));
 
-    #chainElementInteraction = (key) => new Promise((resolve, reject) => {
-        this.#statefulElements.has(key) ? resolve(key) : reject(`No stateful element found for key: ${key}`);
-    });
+    #chainElementInteraction = asyncGenerator(function* (key) {
+        if (this.#statefulElements.has(key)) {
+            return key;
+        } else {
+            throw new Error(`No stateful element found for key: ${key}`);
+        }
+    }.bind(this));
 
-    handleElementInteraction = (event) => {
+    handleElementInteraction = asyncGenerator(function* (event) {
         const key = event.currentTarget.dataset.key;
-        this.#chainElementInteraction(key)
-            .then(key => this.#updateState(key, this.#statefulElements.get(key).value))
-            .catch(error => console.error(`Error handling interaction: ${error}`));
-    }
+        try {
+            const resolvedKey = yield runContinuation(this.#chainElementInteraction(key));
+            yield runContinuation(this.#updateState(resolvedKey, this.#statefulElements.get(resolvedKey).value));
+        } catch (error) {
+            console.error(`Error handling interaction: ${error}`);
+        }
+    }.bind(this));
 
-    addStatefulElement = (key, element) => {
+    addStatefulElement = asyncGenerator(function* (key, element) {
         this.#statefulElements.set(key, element);
         console.debug(`Stateful element added: ${key}`);
-    }
+    }.bind(this));
 
-    removeStatefulElement = (key) => {
+    removeStatefulElement = asyncGenerator(function* (key) {
         if (this.#statefulElements.delete(key)) {
             console.debug(`Stateful element removed: ${key}`);
         }
-    }
+    }.bind(this));
 
-    updateUI = (state) => {
-        this.#updateStatefulElements(state);
-    }
+    updateUI = asyncGenerator(function* (state) {
+        yield runContinuation(this.#updateStatefulElements(state));
+    }.bind(this));
 }

@@ -1,8 +1,9 @@
 // StatefulElement.js
 import EventManager from './EventManager.js';
 import ElementManager from './ElementManager.js';
+import { asyncGenerator, runContinuation } from './utils/DelimitedContinuationsUtils.js';
 
-export class StatefulElement {
+class StatefulElement {
     #state = {};
     #eventManager = new EventManager();
     #elementManager;
@@ -12,8 +13,6 @@ export class StatefulElement {
     }
 
     constructor() {
-        // super();
-        // this.attachShadow({ mode: 'open' });
         this.#state = {};
         this.#initialize();
     }
@@ -30,21 +29,21 @@ export class StatefulElement {
         }
     }
 
-    #initialize = () => {
+    #initialize = asyncGenerator(function* () {
         this.#elementManager = new ElementManager(this.#eventManager);
         this.#setupEventListeners();
-    }
+    }.bind(this));
 
-    #setupEventListeners = () => {
+    #setupEventListeners = asyncGenerator(function* () {
         this.addEventListener('click', this.#handleActionClicks);
-    }
+    }.bind(this));
 
-    #handleActionClicks = (event) => {
+    #handleActionClicks = asyncGenerator(function* (event) {
         const { target } = event;
         if (target.matches('[data-action]')) {
-            this.#triggerActionEvent(target.dataset.action, { target });
+            yield runContinuation(this.#triggerActionEvent(target.dataset.action, { target }));
         }
-    }
+    }.bind(this));
 
     #triggerActionEvent = (action, detail) => {
         this.#eventManager.dispatchEvent(action, detail);
@@ -54,15 +53,15 @@ export class StatefulElement {
         this.#eventManager.dispatchEvent(eventName, { detail: { ...detail, state: this.#state }, bubbles: true, composed: true });
     }
 
-    setState = (newState) => {
+    setState = asyncGenerator(function* (newState) {
         this.#state = { ...this.#state, ...newState };
-        this.#notifyStateChange();
-        this.#elementManager.updateUI(this.#state);
-    }
+        yield runContinuation(this.#notifyStateChange());
+        yield runContinuation(this.#elementManager.updateUI(this.#state));
+    }.bind(this));
 
     getState = () => ({ ...this.#state });
 
-    mergeState = (partialState) => {
+    mergeState = asyncGenerator(function* (partialState) {
         const prevState = { ...this.#state };
         this.#state = { ...this.#state, ...partialState };
 
@@ -74,11 +73,11 @@ export class StatefulElement {
         }, {});
 
         if (Object.keys(updatedState).length > 0) {
-            this.#notifyStateChange('stateUpdated', { updatedKeys: Object.keys(updatedState), updatedValues: updatedState });
+            yield runContinuation(this.#notifyStateChange('stateUpdated', { updatedKeys: Object.keys(updatedState), updatedValues: updatedState }));
         }
-    }
+    }.bind(this));
 
-    groupState = (groupName, stateIds = []) => {
+    groupState = asyncGenerator(function* (groupName, stateIds = []) {
         if (!Array.isArray(stateIds) || !stateIds.length) {
             console.error('stateIds must be a non-empty array.');
             return;
@@ -100,10 +99,10 @@ export class StatefulElement {
             return acc;
         }, {});
 
-        this.#notifyStateChange('stateUpdated', { updatedKeys, updatedValues });
-    }
+        yield runContinuation(this.#notifyStateChange('stateUpdated', { updatedKeys, updatedValues }));
+    }.bind(this));
 
-    updateGroupState = (groupName, partialState) => {
+    updateGroupState = asyncGenerator(function* (groupName, partialState) {
         const groupState = this.#state[groupName];
         if (!groupState || typeof groupState !== 'object' || Array.isArray(groupState)) {
             console.warn(`Group name '${groupName}' does not exist, is not an object, or is an array.`);
@@ -117,35 +116,35 @@ export class StatefulElement {
             acc[key] = partialState[key];
             return acc;
         }, {});
-        this.#notifyStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName], updatedKeys, updatedValues });
-    }
+        yield runContinuation(this.#notifyStateChange('groupStateUpdated', { groupName, groupedState: this.#state[groupName], updatedKeys, updatedValues }));
+    }.bind(this));
 
-    manageListeners = (groupName, callback, action = 'add') => {
+    manageListeners = asyncGenerator(function* (groupName, callback, action = 'add') {
         this.#eventManager.manageStateListeners(groupName, callback, action);
-    }
+    }.bind(this));
 
-    watchState = (callback) => {
+    watchState = asyncGenerator(function* (callback) {
         this.#eventManager.addEventListener('statechange', callback);
-    }
+    }.bind(this));
 
-    addState = (stateName, value = true) => {
+    addState = asyncGenerator(function* (stateName, value = true) {
         this.#state = { ...this.#state, [stateName]: value };
-        this.#notifyStateChange('stateAdded', { stateName, value });
-    }
+        yield runContinuation(this.#notifyStateChange('stateAdded', { stateName, value }));
+    }.bind(this));
 
-    removeState = (stateName) => {
+    removeState = asyncGenerator(function* (stateName) {
         if (!(stateName in this.#state)) return;
 
         const newState = { ...this.#state };
         delete newState[stateName];
         this.#state = newState;
-        this.#notifyStateChange('stateRemoved', { stateName });
-    }
+        yield runContinuation(this.#notifyStateChange('stateRemoved', { stateName }));
+    }.bind(this));
 
     hasState = (stateName) => stateName in this.#state;
 
-    resetState = () => {
+    resetState = asyncGenerator(function* () {
         this.#state = {};
-        this.#notifyStateChange('stateReset');
-    }
+        yield runContinuation(this.#notifyStateChange('stateReset'));
+    }.bind(this));
 }
