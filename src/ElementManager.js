@@ -25,13 +25,13 @@ export default class ElementManager {
             element.value = value;
             this.#statefulElements.set(key, element);
         });
-        console.debug('Stateful elements updated:', this.#statefulElements);
+        // console.debug('Stateful elements updated:', this.#statefulElements);
     }.bind(this));
 
     #updateState = asyncGenerator(function* (stateName, stateValue) {
         const detail = { stateName, stateValue };
         yield runContinuation(this.#eventManager.dispatchEvent('updateState', detail));
-        console.debug(`Update state event triggered with name: ${stateName} and value: ${stateValue}`);
+        // console.debug(`State updated: ${stateName} - ${stateValue}`);
     }.bind(this));
 
     #chainElementInteraction = asyncGenerator(function* (key) {
@@ -50,6 +50,10 @@ export default class ElementManager {
         } catch (error) {
             console.error(`Error handling interaction: ${error}`);
         }
+    }.bind(this));
+
+    getStatefulElement = asyncGenerator(function* (key) {
+        return this.#statefulElements.get(key);
     }.bind(this));
 
     addStatefulElement = asyncGenerator(function* (key, element) {

@@ -3,7 +3,7 @@ import EventManager from './EventManager.js';
 import ElementManager from './ElementManager.js';
 import { asyncGenerator, runContinuation } from './utils/DelimitedContinuationsUtils.js';
 
-class StatefulElement {
+export default class StatefulElement {
     #state = {};
     #eventManager = new EventManager();
     #elementManager;
@@ -17,7 +17,7 @@ class StatefulElement {
         this.#initialize();
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {
+    attributeChangedCallback = (name, oldValue, newValue) => {
         if (name === 'data-state' && oldValue !== newValue) {
             this.setState(JSON.parse(newValue));
         }
@@ -35,7 +35,7 @@ class StatefulElement {
     }.bind(this));
 
     #setupEventListeners = asyncGenerator(function* () {
-        this.addEventListener('click', this.#handleActionClicks);
+        yield runContinuation(this.#eventManager.addEventListener('click', this.#handleActionClicks));
     }.bind(this));
 
     #handleActionClicks = asyncGenerator(function* (event) {
@@ -57,6 +57,7 @@ class StatefulElement {
         this.#state = { ...this.#state, ...newState };
         yield runContinuation(this.#notifyStateChange());
         yield runContinuation(this.#elementManager.updateUI(this.#state));
+        return this.#state; // Return the updated state
     }.bind(this));
 
     getState = () => ({ ...this.#state });
