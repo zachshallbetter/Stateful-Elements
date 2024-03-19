@@ -1,6 +1,9 @@
 # Delimited Continuations Utilities
 
-Enhance your JavaScript applications with the Delimited Continuations Utilities module, offering advanced control over asynchronous operations. Designed for developers who need robust solutions for managing async generator functions, this module simplifies error handling, supports flexible retry strategies, and facilitates graceful cancellation of ongoing operations. Dive into a world where asynchronous code is clean, efficient, and resilient.
+The Delimited Continuations Utilities module provides a set of tools that simplify the management of asynchronous operations in JavaScript. It is designed to abstract the complexity of using delimited continuations directly, offering advanced control over asynchronous operations. This module is ideal for developers who need robust solutions for managing async generator functions, simplifying error handling, supporting flexible retry strategies, and facilitating graceful cancellation of ongoing operations. With the Delimited Continuations Utilities, you can dive into a world where asynchronous code is clean, efficient, and resilient.
+
+## Warning
+This README is a comprehensive guide for utilizing the Delimited Continuations Utilities module in your projects. It covers everything you need to know to leverage the module's capabilities effectively, from simple tasks to advanced asynchronous operation management. If you're new to the concept of delimited continuations or need a refresher, we recommend reading the "Understanding Delimited Continuations" section to gain a solid understanding of the underlying principles and benefits of this programming construct.
 
 ## Understanding Delimited Continuations
 
@@ -10,9 +13,38 @@ Delimited Continuations provide a mechanism to control the flow of asynchronous 
 
 Delimited Continuations are a programming construct that allows the capture of the continuation of a computation (a snapshot of its future execution state) at a given point, to be resumed later. This can be thought of as putting a bookmark in your code's execution to return to it after performing other tasks.
 
-### Why are Delimited Continuations important in asynchronous programming?
+### How do Delimited Continuations differ from regular continuations?
+
+Regular continuations capture the entire future execution state of a function, including the entire call stack, making them less granular and harder to manage. Delimited Continuations, on the other hand, capture the continuation up to a specific point in the code, allowing for more fine-grained control over the execution state. This makes them more flexible and easier to work with in complex asynchronous scenarios.
+
+### Why are Delimited Continuations useful?
 
 Asynchronous programming involves operations that do not complete immediately, such as fetching data from a server or reading a file from disk. Delimited Continuations allow these operations to be paused and resumed, providing a way to manage asynchronous code more effectively. This improves code readability, error handling, and resource management, making asynchronous code easier to write, understand, and debug.
+
+### Comparing Delimited Continuations to Promises and Callbacks
+
+While Promises and Callbacks are common tools for managing asynchronous operations in JavaScript, Delimited Continuations offer a more granular and flexible approach. Promises represent a single future value, while Delimited Continuations can capture and resume the entire execution state of a function. Callbacks, on the other hand, are less composable and harder to reason about than Delimited Continuations, which provide a more structured and predictable way to manage asynchronous code. Examples of Delimited Continuations in JavaScript include async generator functions, which use the `yield` keyword to pause execution and return a value, and the `async` and `await` keywords, which provide syntactic sugar for working with Promises and Delimited Continuations.
+
+```javascript
+// Example of async generator function
+async function* asyncNumbers() {
+  yield 1;
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate async operation
+  yield 2;
+}
+```
+versus
+```javascript
+// Example of async function
+async function asyncNumbers() {
+  await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate async operation
+  return 2;
+}
+```
+
+### How do Delimited Continuations improve error handling and retries?
+
+Delimited Continuations provide a natural way to capture and handle errors at the point of their occurrence, allowing for more granular and context-aware error management. This makes it easier to implement retry strategies, where the continuation can be captured and resumed after a transient error occurs, without losing the context of the operation. This is particularly useful for managing network requests, database queries, and other I/O-bound operations that may encounter temporary failures.
 
 ### How does the Delimited Continuations Utilities module help?
 
@@ -270,10 +302,10 @@ Encountering issues or have questions? Please file an issue on our GitHub reposi
 
 ## Future Enhancements
 
-- **TypeScript Support**: Improve typings for better integration with TypeScript projects.
-- **Performance Metrics**: Expand metrics collection for deeper insights into async operations' performance.
-- **Enhanced Cancellation Support**: Broaden cancellation capabilities for more complex asynchronous patterns.
-
----
-
-This README is designed to be a comprehensive guide for utilizing the Delimited Continuations Utilities module in your projects. From simple tasks to advanced asynchronous operation management, our goal is to empower developers with the tools needed for modern web development.
+- **Enhanced Type Definitions**: While the module currently offers basic TypeScript definitions, we plan to expand these to cover every utility and option in detail, providing developers with improved type safety, better development-time checks, and autocompletion in IDEs that support TypeScript.
+- **Efficiency Improvements**: We are continuously seeking ways to optimize the performance of the module, reducing its runtime overhead, and ensuring that it scales gracefully in applications with high concurrency and throughput requirements.
+- **Customizable Retry Strategies**: Beyond fixed delays and exponential backoff, we intend to introduce more flexible and dynamic retry strategies, including support for rate-limiting responses, adaptive retry based on network conditions, and integration with third-party retry libraries for more complex scenarios.
+- **Fine-Grained Cancellation Control**: Future versions will offer more nuanced control over cancellation, allowing developers to specify cancellation behaviors at different stages of an async operation or generator execution. This includes partial rollback, state saving for resumption, and conditional cancellation based on custom logic.
+- **Richer Metrics and Logging**: Enhancements in observability will include more detailed metrics on async operation performance, including time spent in waiting states, detailed error logging with stack traces for retries, and integration with external monitoring tools.
+- **Community Feedback Loop**: We actively encourage the community to propose new features, improvements, and use cases. Your feedback is invaluable in shaping the module's direction, ensuring it meets the real-world needs of JavaScript developers.
+- **Guides and Best Practices**: To help developers get the most out of the module, we plan to release a series of guides, tutorials, and best practice recommendations, covering everything from basic usage to advanced patterns for managing asynchronous code.
