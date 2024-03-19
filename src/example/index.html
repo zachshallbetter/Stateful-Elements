@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stateful Element Documentation</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .left-panel {
+            order: 1;
+        }
+        .right-panel {
+            order: 2;
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h2 {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+        p, li, code {
+            line-height: 1.6;
+        }
+        code {
+            display: block;
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li::before {
+            content: "";
+            color: #007bff;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+            display: none; /* temporarily hide the bullet */
+        }
+        .example {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+        .example button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .example button:hover {
+            background-color: #0056b3;
+        }
+        .state-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #e2e6ea;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .event-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #e2e6ea;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .state-label {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Stateful Element Documentation</h1>
+    <div class="container">
+        <div class="panel left-panel">
+            <h2>Installation</h2>
+            <p>Install the package using npm:</p>
+            <code>npm install stateful-element</code>
+            <h2>Usage</h2>
+            <p>Import the package and use the <code>StatefulElement</code> class:</p>
+            <code>import { StatefulElement } from 'stateful-element';</code>
+            <p>Create a new instance:</p>
+            <code>const element = new StatefulElement();</code>
+            <h2>API</h2>
+            <ul>
+                <li><code>createState(stateName, initialValue)</code></li>
+                <li><code>setState(stateName, newValue)</code></li>
+                <li><code>getState(stateName)</code></li>
+                <li><code>subscribe(stateName, callback)</code></li>
+            </ul>
+        </div>
+        <div class="panel right-panel">
+            <h2>Interactive Example</h2>
+            <div class="example">
+                <h3>Counter</h3>
+                <p>Click the button to increment the counter:</p>
+                <button id="increment" data-action="increment">Increment</button>
+                <div class="state-display">
+                    <span class="state-label">Counter Value:</span>
+                    <span id="counter">0</span>
+                </div>
+                <!-- Add a reset button for resetting the counter -->
+                <button id="reset" data-action="reset">Reset Counter</button>
+            </div>
+            <div class="state-display">
+                <span class="state-label">State Data:</span>
+                <span id="state-data"></span>
+            </div>
+            <div class="event-display">
+                <span class="state-label">Event:</span>
+                <span id="event-occurance"></span>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="./index.js"></script>
+</body>
+</html>
