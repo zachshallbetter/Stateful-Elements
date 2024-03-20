@@ -76,11 +76,12 @@ export async function runGenerator(generator, options = {}, cancellationToken) {
             growthFactor: 2,
             retryCondition: (err) => true
         },
-        onYield, onCompletion, onError, onCancel
+        onYield, onCompletion, onError, onCancel, saveState, restoreState, rewind, replay
     } = options;
 
     let attempt = 0;
     let result, numYields = 0, numErrors = 0, startTime = performance.now();
+    let generatorState, yieldPoints = [];
 
     async function executeGenerator() {
         try {
@@ -93,6 +94,13 @@ export async function runGenerator(generator, options = {}, cancellationToken) {
                 if (result.done) break;
                 if (onYield) onYield(result.value);
                 numYields++;
+                generatorState = result;
+                if (saveState) saveState(generatorState);
+                if (rewind) yieldPoints.push(generatorState);
+                if (replay && yieldPoints.length > 0) {
+                    generatorState = yieldPoints.pop();
+                    result = { value: generatorState.value, done: false };
+                }
             }
         } catch (err) {
             if (onError) onError(err);
@@ -101,6 +109,7 @@ export async function runGenerator(generator, options = {}, cancellationToken) {
                 const delay = calculateRetryDelay(attempt, retryOptions);
                 await wait(delay);
                 attempt++;
+                if (restoreState) restoreState();
                 return executeGenerator();
             } else {
                 throw err;
