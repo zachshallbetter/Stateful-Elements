@@ -9,6 +9,7 @@
  * @exports runContinuation
  * @exports CancellationToken
  * @exports exponentialBackoff
+ * @exports applyMiddleware
  */
 
 /**
@@ -57,6 +58,22 @@ export const wait = milliseconds => new Promise(resolve => setTimeout(resolve, m
 export const asyncGenerator = (genFunc, options = {}) => async function (...args) {
     const generator = genFunc.apply(this, args);
     if (typeof options.onStart === 'function') options.onStart();
+    return runGenerator(generator, options);
+};
+
+/**
+ * @function applyMiddleware - Applies middleware functions to the async generator.
+ * @param {Function} genFunc - The async generator function to wrap.
+ * @param {Function[]} middlewareFunctions - The middleware functions to apply.
+ * @param {Object} [options={}] - Additional options for the async generator.
+ * @returns {Function} - An async function that runs the wrapped async generator with applied middleware.
+ */
+export const applyMiddleware = (genFunc, middlewareFunctions, options = {}) => {
+    const generator = genFunc.apply(this, args);
+    if (typeof options.onStart === 'function') options.onStart();
+    middlewareFunctions.forEach(middleware => {
+        generator = middleware(generator);
+    });
     return runGenerator(generator, options);
 };
 
