@@ -1,5 +1,5 @@
 {
-  "name": "stateful-elements",
+  "name": "dc-example",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -27,6 +27,11 @@
     "jest": "^29.7.0"
   },
   "dependencies": {
+    "d3-selection": "^3.0.0",
     "happy-dom": "^13.7.0"
-  }
+  },
+  "description": "The Stateful (DOM) Elements Library is an advanced JavaScript library designed to significantly enhance the Document Object Model (DOM) by seamlessly integrating state management capabilities directly into DOM elements. By doing so, it offers developers an exceptionally convenient and efficient method for managing the state of DOM elements, thereby substantially improving code organization, readability, and maintainability. This library stands as a pivotal tool for developers seeking to streamline their web development processes and ensure a more structured and intuitive handling of dynamic content and user interactions.",
+  "main": "scripts.js",
+  "author": "",
+  "license": "ISC"
 }

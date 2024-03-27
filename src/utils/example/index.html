@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Delimited Continuations Train Demo</title>
+    <script type="module" src="app.js" async></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #app {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #app canvas {
+            border: 1px solid #000;
+        }
+        .state-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #e2e6ea;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .event-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #e2e6ea;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .state-label {
+            margin-right: 10px;
+        }
+        /* Highlighting and Animation Styles for Interactions */
+        .highlight {
+            border: 2px solid yellow;
+            animation: pulse 2s infinite;
+        }
+        .signal-on {
+            background-color: green;
+        }
+        .signal-off {
+            background-color: red;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .tooltip {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+            display: none;
+        }
+        /* Speed Adjustment Styles */
+        .speed-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .speed-slider {
+            margin: 0 10px;
+        }
+        /* Enhanced Visual Distinction Styles */
+        .train {
+            background-color: #007bff; /* Blue for trains */
+            border: 2px solid #0056b3; /* Darker blue border for trains */
+            border-radius: 10px; /* Rounded edges for train elements */
+            padding: 5px;
+            color: white; /* White text for contrast */
+        }
+        .signal {
+            background-color: #28a745; /* Green for signals */
+            border: 2px solid #1e7e34; /* Darker green border for signals */
+            border-radius: 50%; /* Circular signals */
+            padding: 10px;
+            cursor: pointer; /* Indicate clickable signals */
+        }
+        .station {
+            background-color: #ffc107; /* Yellow for stations */
+            border: 2px solid #d39e00; /* Darker yellow border for stations */
+            border-radius: 5px; /* Slightly rounded edges for station elements */
+            padding: 5px;
+            cursor: grab; /* Indicate draggable stations */
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { SimulationInitializer } from './app.js';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const simulation = new SimulationInitializer();
+                await simulation.initializeSimulation();
+                console.info('Simulation initialized successfully.');
+            } catch (error) {
+                console.error('Failed to initialize the simulation:', error);
+            }
+        });
+
+        // Programmatically Moving Trains
+        function moveTrainToPosition(trainId, newPosition) {
+            // Logic to move the train to a new position on the track
+            console.log(`Train ${trainId} moved to position ${newPosition}.`);
+            // Update the simulation state and UI accordingly
+        }
+
+        // Programmatically Toggling Signal States
+        function toggleSignalState(signalId) {
+            // Logic to toggle the signal state
+            console.log(`Signal ${signalId} state toggled.`);
+            // Update the simulation state and UI accordingly
+        }
+
+        // Programmatically Moving Stations and Adjusting Connections
+        function moveStationToLocation(stationId, newLocation) {
+            // Logic to move the station to a new location
+            console.log(`Station ${stationId} moved to location ${newLocation}.`);
+            // Update the simulation state and UI accordingly
+        }
+
+        // Toggle Signal State on Click
+        const signalElements = document.querySelectorAll('.signal');
+
+        signalElements.forEach((signalElement) => {
+          signalElement.addEventListener('click', () => {
+            const signalId = signalElement.dataset.signalId;
+            toggleSignalState(signalId); // Implement this function to change the signal state in the simulation logic
+            updateSignalUI(signalId); // Reflect the change in the UI
+            signalElement.classList.toggle('signal-on');
+            signalElement.classList.toggle('signal-off');
+          });
+        });
+
+        // Interactive Station Movement and Connection Adjustments
+        const stationElements = document.querySelectorAll('.station');
+
+        stationElements.forEach((stationElement) => {
+          stationElement.setAttribute('draggable', true);
+
+          stationElement.addEventListener('dragstart', (event) => {
+            event.dataTransfer.setData('stationId', station.id);
+            event.target.classList.add('highlight');
+          });
+
+          const railNetworkElement = document.getElementById('railNetwork');
+          railNetworkElement.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const stationId = event.dataTransfer.getData('stationId');
+            const newLocation = calculateLocation(event); // Implement based on your UI layout
+            moveStationToLocation(stationId, newLocation);
+            adjustConnections(stationId); // Recalculate connections and update the simulation and UI accordingly
+            event.target.classList.remove('highlight');
+          });
+
+          railNetworkElement.addEventListener('dragover', (event) => {
+            event.preventDefault(); // Allow drop
+          });
+        });
+
+        // Adding Speed Adjustment Controls for Trains with Visual Feedback
+        const trains = document.querySelectorAll('.train');
+        trains.forEach((train) => {
+            const speedControl = document.createElement('div');
+            speedControl.className = 'speed-control';
+            const speedLabel = document.createElement('label');
+            speedLabel.innerText = 'Speed:';
+            const speedSlider = document.createElement('input');
+            speedSlider.type = 'range';
+            speedSlider.className = 'speed-slider';
+            speedSlider.min = 1;
+            speedSlider.max = 100;
+            speedSlider.value = train.dataset.speed; // Assuming each train has a data attribute for speed
+            speedSlider.addEventListener('input', (event) => {
+                const newSpeed = event.target.value;
+                train.dataset.speed = newSpeed; // Update the train's speed in the dataset
+                // Implement the logic to adjust the train's speed in the simulation
+            });
+            speedControl.appendChild(speedLabel);
+            speedControl.appendChild(speedSlider);
+            train.appendChild(speedControl);
+        });
+
+        // Adding Simulation Control Buttons for Starting, Pausing, and Resetting the Simulation
+        const controlsContainer = document.createElement('div');
+        controlsContainer.className = 'simulation-controls';
+        document.body.appendChild(controlsContainer);
+
+        const startButton = document.createElement('button');
+        startButton.innerText = 'Start';
+        startButton.addEventListener('click', () => {
+            // Implement the logic to start the simulation
+        });
+
+        const pauseButton = document.createElement('button');
+        pauseButton.innerText = 'Pause';
+        pauseButton.addEventListener('click', () => {
+            // Implement the logic to pause the simulation
+        });
+
+        const resetButton = document.createElement('button');
+        resetButton.innerText = 'Reset';
+        resetButton.addEventListener('click', () => {
+            // Implement the logic to reset the simulation
+        });
+
+        controlsContainer.appendChild(startButton);
+        controlsContainer.appendChild(pauseButton);
+        controlsContainer.appendChild(resetButton);
+    </script>
+</body>
+</html>
