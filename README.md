@@ -1,40 +1,44 @@
 # Stateful DOM Elements Library
 
-The Stateful (DOM) Elements Library is an advanced JavaScript library designed to significantly enhance the Document Object Model (DOM) by seamlessly integrating state management capabilities directly into DOM elements. By doing so, it offers developers an exceptionally convenient and efficient method for managing the state of DOM elements, thereby substantially improving code organization, readability, and maintainability. This library stands as a pivotal tool for developers seeking to streamline their web development processes and ensure a more structured and intuitive handling of dynamic content and user interactions.
+The Stateful (DOM) Elements Library is a small, early-stage JavaScript library that keeps state on a DOM element. It defines a `StatefulElement` custom element (a customized built-in `div`) that stores a private state object, exposes methods to set, merge, group and read that state, and notifies listeners registered with `watchState` when `setState` runs. State changes do not update the DOM: nothing re-renders, and the internal `ElementManager.updateUI` only records values in an internal `Map`. The library is three source files with no build step.
 
 ## Installation
 
-You can install the Stateful DOM Elements Library via npm:
+The library is not published to npm. Clone the repository and copy the files in `src/` into your project:
 
 ```bash
-npm install stateful-dom-elements
+git clone https://github.com/zachshallbetter/Stateful-Elements.git
+cp Stateful-Elements/src/*.js path/to/your/project/
 ```
 
-Alternatively, you can include the library directly in your HTML file using a script tag:
+The files are ES modules, so load the entry file with a module script tag. Importing `StatefulElement.js` registers the element as `stateful-element`:
 
 ```html
-<script src="stateful-dom-elements.js"></script>
+<script type="module" src="StatefulElement.js"></script>
+<div is="stateful-element"></div>
 ```
+
+`StatefulElement` extends `HTMLDivElement`, so it needs a browser that supports customized built-in elements (the `is` attribute). Safari does not.
 
 ## Usage
 
+The methods below are called on a `StatefulElement` instance. The element also has `mergeState`, `groupState`, `updateGroupState`, `removeState` and `resetState`. Clicking a child with a `data-action` attribute dispatches an internal event named after the action, but there is no public method to listen for it yet.
+
 ### `setState`
 
-The `setState` method is used to update the custom states associated with a DOM element.
+The `setState` method merges new values into the element's state object and notifies `watchState` listeners.
 
 #### Syntax
 
 ```jsx
-elementInternals.setState(stateName, value);
+element.setState(newState);
 ```
 
-- `stateName`: A string representing the name of the custom state to be updated.
-- `value`: The new value of the custom state.
+- `newState`: An object of state keys and values to merge into the current state.
 
 #### Parameters
 
-- `stateName`: (Required) A string representing the name of the custom state to be updated.
-- `value`: (Required) The new value of the custom state.
+- `newState`: (Required) An object of state keys and values to merge into the current state.
 
 #### Return Value
 
@@ -43,18 +47,20 @@ elementInternals.setState(stateName, value);
 #### Examples
 
 ```jsx
-// Update the custom state 'active' to true
-elementInternals.setState('active', true);
+const element = document.querySelector('div[is="stateful-element"]');
+
+// Set the state 'active' to true
+element.setState({ active: true });
 ```
 
 ```jsx
-// Update the custom state 'error' to false
-elementInternals.setState('error', false);
+// Set the state 'error' to false
+element.setState({ error: false });
 ```
 
 ```jsx
-// Update multiple custom states at once
-elementInternals.setState({
+// Update multiple states at once
+element.setState({
   'loading': true,
   'visible': false
 });
@@ -62,89 +68,86 @@ elementInternals.setState({
 
 ### `getState`
 
-The `getState` method is used to retrieve the current value of a custom state associated with a DOM element.
+The `getState` method returns a copy of the element's whole state object.
 
 #### Syntax
 
 ```jsx
-elementInternals.getState(stateName);
+element.getState();
 ```
-
-- `stateName`: A string representing the name of the custom state to retrieve.
 
 #### Parameters
 
-- `stateName`: (Required) A string representing the name of the custom state to retrieve.
+- None.
 
 #### Return Value
 
-- Returns the current value of the specified custom state.
+- Returns a shallow copy of the current state object.
 
 #### Examples
 
 ```jsx
-// Retrieve the current value of the custom state 'active'
-const isActive = elementInternals.getState('active');
+// Read the current value of 'active'
+const isActive = element.getState().active;
 console.log(isActive); // Output: true
 ```
 
 ```jsx
-// Retrieve the current value of the custom state 'error'
-const isError = elementInternals.getState('error');
+// Read the current value of 'error'
+const isError = element.getState().error;
 console.log(isError); // Output: false
 ```
 
 ### `watchState`
 
-The `watchState` method (or event listener) allows developers to monitor changes to a specific custom state associated with a DOM element.
+The `watchState` method registers a callback that runs every time `setState` is called. It does not filter by state name, and it is not called by `mergeState`, `groupState` or the other methods.
 
 #### Syntax
 
 ```jsx
-element.watchState(stateName, callback);
+element.watchState(callback);
 ```
 
-- `stateName`: A string representing the name of the custom state to monitor.
-- `callback`: A function to be executed when the specified custom state changes.
+- `callback`: A function to be executed when `setState` runs.
 
 #### Parameters
 
-- `stateName`: (Required) A string representing the name of the custom state to monitor.
-- `callback`: (Required) A function to be executed when the specified custom state changes. This function receives an event object as its argument, which contains information about the state change.
+- `callback`: (Required) A function to be executed when `setState` runs. It receives an object whose `detail.state` holds the full state after the update. This is a plain callback, not a DOM event.
 
 #### Examples
 
 ```jsx
-// Watch for changes to the custom state 'active'
-element.watchState('active', (event) => {
-    console.log('Active state changed:', event.detail.state);
+// Log the state after each setState call
+element.watchState((event) => {
+    console.log('State changed:', event.detail.state);
 });
 ```
 
-## Polyfills for Unsupported Browsers
-To ensure compatibility with browsers that do not support certain features, the Stateful DOM Elements Library includes polyfills for essential state management functionality:
+## State Set Methods
 
-- `addState:` Adds a custom state to the set of states associated with a DOM element.
-- `hasState:` Checks if a custom state exists in the set of states associated with a DOM element.
-- `deleteState:` Removes a custom state from the set of states associated with a DOM element.
+These are methods on `StatefulElement` that work on its own state object. They are not polyfills: the library does not use `ElementInternals` or `CustomStateSet`, and the states do not match the `:state()` CSS selector.
 
-These polyfills ensure that essential state management functionality is available across a wide range of browsers, providing a consistent experience for users regardless of their browser choice.
+- `addState:` Adds a key to the element's state.
+- `hasState:` Checks if a key exists in the element's state.
+- `removeState:` Removes a key from the element's state.
 
 ### `addState`
 
-The `addState` polyfill is used to add a custom state to the set of states associated with a DOM element.
+The `addState` method adds a key to the element's state, with a value of `true` unless another value is given.
 
 #### Syntax
 
 ```jsx
-elementInternals.addState(stateName);
+element.addState(stateName, value);
 ```
 
-- `stateName`: A string representing the name of the custom state to be added.
+- `stateName`: A string representing the name of the state to be added.
+- `value`: The value to store. Defaults to `true`.
 
 #### Parameters
 
-- `stateName`: (Required) A string representing the name of the custom state to be added.
+- `stateName`: (Required) A string representing the name of the state to be added.
+- `value`: (Optional) The value to store. Defaults to `true`.
 
 #### Return Value
 
@@ -153,53 +156,53 @@ elementInternals.addState(stateName);
 #### Examples
 
 ```jsx
-// Add the custom state 'active'
-elementInternals.addState('active');
+// Add the state 'active'
+element.addState('active');
 ```
 
 ### `hasState`
 
-The `hasState` polyfill is used to check if a custom state exists in the set of states associated with a DOM element.
+The `hasState` method checks if a key exists in the element's state.
 
 #### Syntax
 
 ```jsx
-elementInternals.hasState(stateName);
+element.hasState(stateName);
 ```
 
-- `stateName`: A string representing the name of the custom state to check.
+- `stateName`: A string representing the name of the state to check.
 
 #### Parameters
 
-- `stateName`: (Required) A string representing the name of the custom state to check.
+- `stateName`: (Required) A string representing the name of the state to check.
 
 #### Return Value
 
-- Returns a boolean indicating whether the specified custom state exists.
+- Returns a boolean indicating whether the specified key exists.
 
 #### Examples
 
 ```jsx
-// Check if the custom state 'active' exists
-const isActive = elementInternals.hasState('active');
+// Check if the state 'active' exists
+const isActive = element.hasState('active');
 console.log(isActive); // Output: true
 ```
 
-### `deleteState`
+### `removeState`
 
-The `deleteState` polyfill is used to remove a custom state from the set of states associated with a DOM element.
+The `removeState` method removes a key from the element's state.
 
 #### Syntax
 
 ```jsx
-elementInternals.deleteState(stateName);
+element.removeState(stateName);
 ```
 
-- `stateName`: A string representing the name of the custom state to be removed.
+- `stateName`: A string representing the name of the state to be removed.
 
 #### Parameters
 
-- `stateName`: (Required) A string representing the name of the custom state to be removed.
+- `stateName`: (Required) A string representing the name of the state to be removed.
 
 #### Return Value
 
@@ -208,16 +211,14 @@ elementInternals.deleteState(stateName);
 #### Examples
 
 ```jsx
-// Remove the custom state 'active'
-elementInternals.deleteState('active');
+// Remove the state 'active'
+element.removeState('active');
 ```
-
-These polyfills ensure that essential state management functionality is available across a wide range of browsers, providing a consistent experience for users regardless of their browser choice.
 
 
 ## Documentation
 
-For detailed documentation and examples, refer to the [API Reference](#) and [Usage Guide](#) provided in the repository.
+For detailed documentation and examples, see the [docs](docs/) folder in the repository. The docs describe the design ideas, including `ElementInternals`, and some of what they describe is not implemented yet.
 
 ## Contributing
 
