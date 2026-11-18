@@ -8,8 +8,8 @@
     "start": "lite-server"
   },
   "keywords": ["web-components", "state-management", "custom-elements"],
-  "author": "Your Name",
-  "license": "ISC",
+  "author": "Zach Shallbetter",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
