@@ -216,6 +216,23 @@ element.removeState('active');
 ```
 
 
+## Repository map
+
+| Path | Contents |
+|---|---|
+| [`src/`](src/) | `StatefulElement.js` (the custom element), `ElementManager.js` and `EventManager.js` |
+| [`test/`](test/) | Jest test file (`index.test.js`) |
+| [`docs/`](docs/) | Design documentation; some of it describes behavior that is not implemented |
+| [`package.json`](package.json) | Package metadata and the `npm test` script |
+
+## Verifying
+
+`npm install` then `npm test` runs `jest` against `test/index.test.js`. As of this writing the test run does not work: `jest` is not declared in `package.json`, and with Jest installed the suite fails with `HTMLDivElement is not defined` because no browser-like test environment is configured. The tests have not been confirmed to pass.
+
+## Status and limitations
+
+Early-stage; the `v1.0.0` tag and `package.json` carry version 1.0.0. The library is not published to npm and has no CI workflow. Behavior and non-goals are listed in the introduction and the Usage section above. Notable changes go in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Documentation
 
 For detailed documentation and examples, see the [docs](docs/) folder in the repository. The docs describe the design ideas, including `ElementInternals`, and some of what they describe is not implemented yet.
